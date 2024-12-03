@@ -1,3 +1,5 @@
+> This is a **preliminary** version of the project.
+
 # Dicke State Preparation
 Implementation and Analysis of the Dicke States on a 2-level (Qubit) Quantum Computer using Primitive Gates for the seminar: _Advanced Topics of Quantum Computing_ at TUM.
 
