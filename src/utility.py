@@ -20,6 +20,9 @@ class DecompositionTargets(IntFlag):
 
 
 class QuantumGates(IntFlag):
+    """
+    Enumeration of all used Quantum Gates.
+    """
     # Primitive Gates
     X = auto()
     H = auto()
@@ -65,9 +68,8 @@ class CircuitSpec:
     def notify_gates(self, gate_type: QuantumGates, n: int):
         """
         Notifies about a number of constructed gates of a certain type.
-        :param gate_type:
-        :param n:
-        :return:
+        :param gate_type: The gate type of the constructed gates (single flag required).
+        :param n: The number of gates that have been created.
         """
         if len(gate_type) != 1:
             raise ValueError("Each call can only notify about a single gate type.")
@@ -78,8 +80,8 @@ class CircuitSpec:
     def get_gate_count(self, gate_types: QuantumGates = QuantumGates.ALL) -> int:
         """
         Gets the accumulated gate count for all given gate types.
-        :param gate_types: A collection of gates to count.
-        :return:
+        :param gate_types: A flag collection of gates to count.
+        :return: The total number of gates of the given types.
         """
         acc = 0
         for gate_type in gate_types:
@@ -89,7 +91,7 @@ class CircuitSpec:
     def used_gate_types(self) -> QuantumGates:
         """
         Returns the collection of gate types with one or more occurrence.
-        :return:
+        :return: A flag collection of all gate types.
         """
         used = QuantumGates.NONE
         for gate_type, n in self._gate_counts.items():
@@ -99,6 +101,11 @@ class CircuitSpec:
 
 
 def produce_gate_count_table(specs: list[tuple[int, int, CircuitSpec]]) -> pd.DataFrame:
+    """
+    Produces a neat data frame containing the Gate counts for a number of Dicke preparation circuits.
+    :param specs: A collection of (n, k, spec) where spec is the CircuitSpec object for the construction of the Dicke preparation circuit.
+    :return: The data frame.
+    """
     data = {}
     circuit_column = []
     gate_types = QuantumGates.NONE
@@ -115,14 +122,30 @@ def produce_gate_count_table(specs: list[tuple[int, int, CircuitSpec]]) -> pd.Da
 
 
 def calculate_t(chi: int) -> int:
+    """
+    Calculates the minimum qubits required to emulate a qudit with chi levels.
+    :param chi: The levels of the qudit.
+    :return: The minimum number of qubits required.
+    """
     return max(1, math.ceil(np.log2(chi)))
 
 
 def binary_string(i: int, t: int) -> str:
+    """
+    Produces a strings of 0s and 1s of length t that is the binary representation of i.
+    :param i: The number to represent in binary.
+    :param t: The number of binary digits.
+    :return: The binary representation as a string of 0s and 1s starting with the MSB.
+    """
     return "{:0{t}b}".format(i, t=t)
 
 
 def hamming_weight(binary: str) -> int:
+    """
+    Calculates the hamming weight of a binary string, i.e. the number of 1s.
+    :param binary: The binary representation as a string of 0s and 1s starting with the MSB.
+    :return: The number of 1s (hamming weight).
+    """
     acc = 0
     for c in binary:
         acc += int(c)
@@ -130,12 +153,23 @@ def hamming_weight(binary: str) -> int:
 
 
 def basis_state(binary: str) -> np.ndarray:
+    """
+    Constructs a statevector for a basis state specified by the given binary string.
+    :param binary: The binary representation of the basis state as a string of 0s and 1s starting with the MSB. The length of this string (including leading 0s) is used to determine the number of qubits.
+    :return:
+    """
     index = int(binary, 2)
     state = np.zeros((2 ** len(binary),), dtype=complex)
     state[index] = 1
     return state
 
 def mismatching_qubits(binary_a: str, binary_b: str) -> set[int]:
+    """
+    Interprets the given binary strings as basis vectors and determines all qubit indices (lowest index <-> last binary digit <-> LSB of the basis state) where they mismatch.
+    :param binary_a: The binary representation of the first basis state as a string of 0s and 1s starting with the MSB.
+    :param binary_b: The binary representation of the second basis state as a string of 0s and 1s starting with the MSB.
+    :return: A set of all mismatching qubit indices (= string indices of the reversed strings)
+    """
     n = len(binary_a)
     if n != len(binary_b):
         raise ValueError("Both binary strings have to have the same length.")

@@ -1,8 +1,14 @@
+import sys
+from pathlib import Path
 from typing import Generator, Iterable
 
 import numpy as np
 import pytest
 from qiskit import QuantumCircuit
+
+# Fix Python Path
+_ROOT_DIR = Path(__file__).parent.parent.parent
+sys.path.append(str(_ROOT_DIR))
 
 from src.dicke import append_dicke_circuit
 from src.simulation import SimulationMode, simulate_circuit

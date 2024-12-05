@@ -16,6 +16,13 @@ class SimulationMode(Enum):
 
 
 def simulate_circuit(circuit: QuantumCircuit, mode: SimulationMode, shots: int | None = None):
+    """
+    Utility function to simplify simulating a Quantum Circuit using the aer-backend.
+    :param circuit: The circuit to simulate. Must be correctly configured with an initial state and instructions to save the results.
+    :param mode: The simulation mode.
+    :param shots: The number of shots if the simulation mode is SHOTS. Default value is 1024 and it should not be specified for other modes.
+    :return: The simulation result, depending on the mode. For SHOTS: a dictionary of basis states and measurement counts, for STATEVECTOR: a qiskit.Statevector object, for UNITARY: a np.ndarray.
+    """
     if mode == SimulationMode.SHOTS:
         if shots is None:
             shots = 1024
@@ -58,6 +65,14 @@ def simulate_circuit(circuit: QuantumCircuit, mode: SimulationMode, shots: int |
 
 
 def simulate_gate(gate: Gate, mode: SimulationMode, initial: np.ndarray | str | None = None, shots: int | None = None):
+    """
+    Utility function to simplify simulating a Quantum Gate using the aer-backend.
+    :param gate: The gate to simulate.
+    :param mode: The simulation mode.
+    :param initial: The initial statevector as a np.ndarray of basis state label (bottom to top). |0.....0> is used by default.
+    :param shots: The number of shots if the simulation mode is SHOTS. Default value is 1024 and it should not be specified for other modes.
+    :return: The simulation result, depending on the mode. For SHOTS: a dictionary of basis states and measurement counts, for STATEVECTOR: a qiskit.Statevector object, for UNITARY: a np.ndarray.
+    """
     if mode == SimulationMode.SHOTS:
         if shots is None:
             shots = 1024

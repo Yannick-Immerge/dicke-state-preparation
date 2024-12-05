@@ -1,3 +1,7 @@
+"""
+Contains decomposable constructions for C^nR_Y(theta) gates and all required sub-gates.
+"""
+
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.circuit.library import XGate, RYGate
@@ -38,6 +42,17 @@ def _append_toffoli_primitive(circuit: QuantumCircuit, c1, c2, target, spec: Cir
 
 def append_toffoli(circuit: QuantumCircuit, c1, c2, target,
                    decomposition : DecompositionTargets = DecompositionTargets.NONE, spec: CircuitSpec | None = None):
+    """
+    Append a Toffoli gate with a controllable decomposition level.
+
+    :param circuit: The quantum circuit to append the Toffoli gate.
+    :param c1: The first control qubit.
+    :param c2: The second control qubit.
+    :param target: The target qubit.
+    :param decomposition: An optional collection of targets that will be decomposed if they appear throughout the construction.
+    :param spec: An optional introspection object that counts gates during the construction.
+    :return: Nothing, appends to circuit in-place.
+    """
     if DecompositionTargets.TOFFOLI in decomposition:
         _append_toffoli_primitive(circuit, c1, c2, target, spec)
     else:
@@ -94,6 +109,20 @@ def _append_transp_operator_primitive(circuit: QuantumCircuit, l: int, l_prime: 
 
 def append_transp_operator(circuit: QuantumCircuit, l: int, l_prime: int, targets: list[int],
                            decomposition: DecompositionTargets = DecompositionTargets.NONE, spec: CircuitSpec | None = None, control: int | None = None):
+    """
+    Appends a transposition operator, i.e. the simplest X-gate construction that achieves |l> <-> <l'| for the basis states of the targets register.
+    Note that the first qubit in targets represents the LSB of the basis state.
+    The decomposition level can be controlled and a single control qubit can optionally be specified.
+
+    :param circuit: The quantum circuit to append the transp-operator gate.
+    :param l: The basis state to swap with l'.
+    :param l_prime: The basis state to swap with l.
+    :param targets: The register of target qubits.
+    :param decomposition: An optional collection of targets that will be decomposed if they appear throughout the construction.
+    :param spec: An optional introspection object that counts gates during the construction.
+    :param control: An optional control qubit that controls the transp-operator.
+    :return: Nothing, appends to circuit in-place.
+    """
     if DecompositionTargets.TRANSP in decomposition:
         _append_transp_operator_primitive(circuit, l, l_prime, targets, spec, control)
     else:
@@ -170,6 +199,19 @@ def _append_cnx_primitive_clean(circuit: QuantumCircuit, controls: list[int], ta
 def append_cnx(circuit: QuantumCircuit, controls: list[int], target: int, clean_aux: int,
                decomposition: DecompositionTargets = DecompositionTargets.NONE, spec: CircuitSpec | None = None,
                control_state: int | None = None):
+    """
+    Appends a c^nX gate with a controllable decomposition level (potentially requiring a clean ancilla).
+    The control state (basis state in the control register that activates the X-gate) can also be specified.
+
+    :param circuit: The quantum circuit to append the c^nX gate.
+    :param controls: The control register.
+    :param target: The target qubit.
+    :param clean_aux: The clean ancilla qubit that might be used if the gate should be decomposed.
+    :param decomposition: An optional collection of targets that will be decomposed if they appear throughout the construction.
+    :param spec: An optional introspection object that counts gates during the construction.
+    :param control_state: If provided, the basis state |control_state> is used to determine when to activate the X gate. By default, this is 2^t - 1, where t = len(controls).
+    :return: Nothing, appends to circuit in-place.
+    """
     if DecompositionTargets.CNX in decomposition:
         _append_cnx_primitive_clean(circuit, controls, target, clean_aux, decomposition, spec, control_state)
     else:
@@ -202,6 +244,21 @@ def _append_cnry_primitive(circuit: QuantumCircuit, theta: float, controls: list
 
 def append_cnry(circuit: QuantumCircuit, theta: float, controls: list[int], target: int, clean_aux_cry: int,
                 clean_aux_cx: int, decomposition: DecompositionTargets = DecompositionTargets.NONE, spec: CircuitSpec | None = None, control_state: int | None = None):
+    """
+    Appends a c^nR_Y(theta) gate with a controllable decomposition level (potentially requiring a clean ancilla for the cR_Y(theta) and c^nX operations).
+    The control state (basis state in the control register that activates the R_y(theta)-gate) can also be specified.
+
+    :param circuit: The quantum circuit to append the c^nR_Y(theta) gate.
+    :param theta: Rotation angle for the y-rotation of the target qubit.
+    :param controls: The control register.
+    :param target: The target qubit.
+    :param clean_aux_cry: The clean ancilla qubit that might be used for the cR_Y(theta)-operation if the gate should be decomposed.
+    :param clean_aux_cx: The clean ancilla qubit that might be used for the c^nX-operation if the gate should be decomposed.
+    :param decomposition: An optional collection of targets that will be decomposed if they appear throughout the construction.
+    :param spec: An optional introspection object that counts gates during the construction.
+    :param control_state: If provided, the basis state |control_state> is used to determine when to activate the R_Y(theta) gate. By default, this is 2^t - 1, where t = len(controls).
+    :return: Nothing, appends to circuit in-place.
+    """
     if DecompositionTargets.CNRY in decomposition:
         _append_cnry_primitive(circuit, theta, controls, target, clean_aux_cry, clean_aux_cx, decomposition, spec, control_state)
     else:

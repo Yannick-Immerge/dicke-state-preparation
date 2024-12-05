@@ -1,3 +1,7 @@
+"""
+Implements Dicke State preparation circuits as described in "Dicke States as matrix product states" (https://arxiv.org/abs/2408.04729) by D. Raveh and R. I. Nepomechie
+"""
+
 import numpy as np
 import pandas as pd
 from qiskit import QuantumCircuit
@@ -9,17 +13,18 @@ from src.utility import calculate_t, DecompositionTargets, CircuitSpec, QuantumG
 
 def _gamma_j_r_0(j, r, n, k) -> float:
     """
-    Calculates gamma_{r, 0}^(j)
-    :param j:
-    :param r:
-    :param n:
-    :param k:
-    :return:
+    Calculates gamma_{r, 0}^(j) as defined in the paper.
     """
     return 0 if k - r > n - j + 1 else np.sqrt(1 + (r - k) / (n-j+1))
 
 
 def create_inc_unitary(chi, invert: bool = False) -> np.ndarray:
+    """
+    Creates a unitary matrix that represents the action of the increment/decrement operators (oplus, ominus) as mentioned in the paper.
+    :param chi: The number of levels of the qudit.
+    :param invert: Toggles whether to invert the increment operator.
+    :return: If invert is True, the decrement unitary is returned. Otherwise, the increment unitary.
+    """
     t = calculate_t(chi)
     unitary = np.zeros((2 ** t, 2 ** t), dtype=complex)
     for i in range(2 ** t):
@@ -34,8 +39,8 @@ def create_inc_unitary(chi, invert: bool = False) -> np.ndarray:
 
 def create_inc_gate(chi, invert: bool = False) -> Gate:
     """
-    Produces an increment gate modulus chi for the minimum number of qubits required to represent a chi-level qudit.
-    :return:
+    Creates a labeled gate from the unitary for the increment/decrement operators (See create_inc_unitary).
+    :return: A quantum gate for the result of create_inc_unitary.
     """
     t = calculate_t(chi)
     gate_circuit = QuantumCircuit(t)
@@ -90,8 +95,19 @@ def append_i_operator(circuit: QuantumCircuit, l: int, j: int, sites: list[int],
                       decomposition: DecompositionTargets = DecompositionTargets.NONE,
                       spec: CircuitSpec | None = None):
     """
-    Produces I_l^(j).
-    :return:
+    Appends I_l^(j) to the circuit as described in the paper with a controllable decomposition.
+
+    :param circuit: The quantum circuit to append the I-operator.
+    :param l: Index of the suboperator.
+    :param j: Site to act on.
+    :param sites: The register containing all site qubits.
+    :param qudit: The register emulating the chi-level qudit.
+    :param chi: The number of levels of the qudit.
+    :param clean_aux_cry: The clean ancilla qubit that might be used for the cR_Y(theta)-operation if the gate should be decomposed.
+    :param clean_aux_cx: The clean ancilla qubit that might be used for the c^nX-operation if the gate should be decomposed.
+    :param decomposition: An optional collection of targets that will be decomposed if they appear throughout the construction.
+    :param spec: An optional introspection object that counts gates during the construction.
+    :return: Nothing, appends to circuit in-place.
     """
     if DecompositionTargets.I_OP in decomposition:
         _append_i_operator_primitive(circuit, l, j, sites, qudit, chi, clean_aux_cry, clean_aux_cx, decomposition, spec)
@@ -102,6 +118,20 @@ def append_i_operator(circuit: QuantumCircuit, l: int, j: int, sites: list[int],
 def append_u_operator(circuit: QuantumCircuit, j: int, sites: list[int], qudit: list[int], chi: int, clean_aux_cry: int,
                       clean_aux_cx: int, decomposition: DecompositionTargets = DecompositionTargets.NONE,
                       spec: CircuitSpec | None = None):
+    """
+    Appends U_j to the circuit as described in the paper with a controllable decomposition.
+
+    :param circuit: The quantum circuit to append U-operator.
+    :param j: Site to act on.
+    :param sites: The register containing all site qubits.
+    :param qudit: The register emulating the chi-level qudit.
+    :param chi: The number of levels of the qudit.
+    :param clean_aux_cry: The clean ancilla qubit that might be used for the cR_Y(theta)-operation if the gate should be decomposed.
+    :param clean_aux_cx: The clean ancilla qubit that might be used for the c^nX-operation if the gate should be decomposed.
+    :param decomposition: An optional collection of targets that will be decomposed if they appear throughout the construction.
+    :param spec: An optional introspection object that counts gates during the construction.
+    :return: Nothing, appends to circuit in-place.
+    """
     n = len(sites)
     k = chi - 1
     for l in range(max(0, j - n + k - 1), min(j - 1, k - 1) + 1):
@@ -111,6 +141,19 @@ def append_u_operator(circuit: QuantumCircuit, j: int, sites: list[int], qudit: 
 def append_dicke_circuit(circuit: QuantumCircuit, sites: list[int], qudit: list[int], chi: int, clean_aux_cry: int,
                          clean_aux_cx: int, decomposition: DecompositionTargets = DecompositionTargets.NONE,
                          spec: CircuitSpec | None = None):
+    """
+    Appends the entire dicke state preparation operator to the circuit as described in the paper with a controllable decomposition.
+
+    :param circuit: The quantum circuit to append the preparation operator.
+    :param sites: The register containing all site qubits.
+    :param qudit: The register emulating the chi-level qudit.
+    :param chi: The number of levels of the qudit.
+    :param clean_aux_cry: The clean ancilla qubit that might be used for the cR_Y(theta)-operation if the gate should be decomposed.
+    :param clean_aux_cx: The clean ancilla qubit that might be used for the c^nX-operation if the gate should be decomposed.
+    :param decomposition: An optional collection of targets that will be decomposed if they appear throughout the construction.
+    :param spec: An optional introspection object that counts gates during the construction.
+    :return: Nothing, appends to circuit in-place.
+    """
     n = len(sites)
     for j in range(1, n + 1):
         append_u_operator(circuit, j, sites, qudit, chi, clean_aux_cry, clean_aux_cx, decomposition, spec)
@@ -120,7 +163,12 @@ def create_dicke_circuit(n: int, k: int,
                          decomposition: DecompositionTargets = DecompositionTargets.NONE,
                          spec: CircuitSpec | None = None) -> QuantumCircuit:
     """
-    Produces a composite qiskit gate that prepares the
+    Produces a circuit, automatically determining the number of qubits, appending the preparation circuit for D_k^n with a controllable decomposition.
+    :param n: The number of qubit sites.
+    :param k: The hamming weight of states considered for the equal superposition.
+    :param decomposition: An optional collection of targets that will be decomposed if they appear throughout the construction.
+    :param spec: An optional introspection object that counts gates during the construction.
+    :return: Returns the constructed circuit.
     """
     # Depending on the decomposition level we might need auxiliary qubits.
     additional = 0
@@ -144,11 +192,22 @@ def create_dicke_circuit(n: int, k: int,
 
 def print_dicke_circuit(n: int, k: int,
                          decomposition: DecompositionTargets = DecompositionTargets.NONE):
+    """
+    Prints the preparation circuit for D^n_k to the console.
+    :param n: The number of qubit sites.
+    :param k: The hamming weight of states considered for the equal superposition.
+    :param decomposition: An optional collection of targets that will be decomposed if they appear throughout the construction.
+    """
     circuit = create_dicke_circuit(n, k, decomposition)
     print(circuit)
 
 
 def jupyter_produce_counts(decomposition: DecompositionTargets) -> pd.DataFrame:
+    """
+    Jupyter utility function to get gate counts.
+    :param decomposition: The collection of targets that will be decomposed if they appear throughout the construction
+    :return: The data frame to be presented in the jupyter notebook.
+    """
     spec_2_2 = CircuitSpec()
     spec_3_2 = CircuitSpec()
     spec_3_3 = CircuitSpec()
