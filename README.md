@@ -17,4 +17,5 @@ jupyter notebook
 ```
 
 ## Presentation
-The presentation for the seminar is located at `AQC Seminar Dicke States.pptx`.
+The presentation that is shown for the seminar is located at `presentation/dicke_state_preparation.pptx`.
+A more detailed version for further reading is located at `presentation/dicke_state_preparation_detailed.pptx`.

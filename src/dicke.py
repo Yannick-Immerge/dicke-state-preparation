@@ -213,16 +213,16 @@ def jupyter_produce_counts(decomposition: DecompositionTargets) -> pd.DataFrame:
     spec_3_3 = CircuitSpec()
     spec_5_4 = CircuitSpec()
 
-    create_dicke_circuit(2, 2, decomposition, spec_2_2)
-    create_dicke_circuit(3, 2, decomposition, spec_3_2)
-    create_dicke_circuit(3, 3, decomposition, spec_3_3)
-    create_dicke_circuit(5, 4, decomposition, spec_5_4)
+    circ_2_2 = create_dicke_circuit(2, 2, decomposition, spec_2_2)
+    circ_3_2 = create_dicke_circuit(3, 2, decomposition, spec_3_2)
+    circ_3_3 = create_dicke_circuit(3, 3, decomposition, spec_3_3)
+    circ_5_4 = create_dicke_circuit(5, 4, decomposition, spec_5_4)
 
     return produce_gate_count_table([
-        (2, 2, spec_2_2),
-        (3, 2, spec_3_2),
-        (3, 3, spec_3_3),
-        (5, 4, spec_5_4)
+        (2, 2, spec_2_2, circ_2_2),
+        (3, 2, spec_3_2, circ_3_2),
+        (3, 3, spec_3_3, circ_3_3),
+        (5, 4, spec_5_4, circ_5_4)
     ])
 
 

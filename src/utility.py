@@ -4,6 +4,8 @@ from enum import IntFlag, auto
 import numpy as np
 import pandas as pd
 
+from qiskit import QuantumCircuit
+
 
 class DecompositionTargets(IntFlag):
     """
@@ -100,22 +102,28 @@ class CircuitSpec:
         return used
 
 
-def produce_gate_count_table(specs: list[tuple[int, int, CircuitSpec]]) -> pd.DataFrame:
+def produce_gate_count_table(specs: list[tuple[int, int, CircuitSpec, QuantumCircuit]]) -> pd.DataFrame:
     """
     Produces a neat data frame containing the Gate counts for a number of Dicke preparation circuits.
-    :param specs: A collection of (n, k, spec) where spec is the CircuitSpec object for the construction of the Dicke preparation circuit.
+    :param specs: A collection of (n, k, spec, circuit) where spec is the CircuitSpec object for the construction of the Dicke preparation circuit.
     :return: The data frame.
     """
     data = {}
     circuit_column = []
+    depth_column = []
+    qubit_count_column = []
     gate_types = QuantumGates.NONE
-    for n, k, spec in specs:
+    for n, k, spec, circuit in specs:
         circuit_column.append(f"D^{n}_{k}")
+        depth_column.append(circuit.depth())
+        qubit_count_column.append(circuit.num_qubits)
         gate_types |= spec.used_gate_types()
     data["Circuit"] = circuit_column
+    data["Layer Depth"] = depth_column
+    data["Qubit Count"] = qubit_count_column
 
     for gate_type in gate_types:
-        gate_type_column = [spec.get_gate_count(gate_type) for _, _, spec in specs]
+        gate_type_column = [spec.get_gate_count(gate_type) for _, _, spec, _ in specs]
         data[gate_type.to_string()] = gate_type_column
 
     return pd.DataFrame(data)
